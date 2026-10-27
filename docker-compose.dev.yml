@@ -1,0 +1,87 @@
+# ============================================================
+# 墨阅书城 · Docker 部署编排
+# ------------------------------------------------------------
+# 前置条件：
+#   1. 宿主机已运行 MySQL 与 Redis（本项目复用已有实例）
+#        novel-mysql   127.0.0.1:3307  root/test123456  库 novel_plus
+#        novel-redis   127.0.0.1:6379  密码 test123456
+#   2. 已执行 mvn package -DskipTests 生成三个可执行 jar
+#
+# 启动：docker compose up -d --build
+# 查看：docker compose ps && docker compose logs -f novel-front
+# 停止：docker compose down
+# ------------------------------------------------------------
+# 说明：容器通过 host.docker.internal 访问宿主机端口，
+#      Windows / macOS 的 Docker Desktop 原生支持；
+#      Linux 下由 extra_hosts 的 host-gateway 提供。
+# ============================================================
+
+services:
+  # ---------------- 前台门户 ----------------
+  novel-front:
+    image: moyue/novel-front:local
+    build:
+      context: ./novel-front
+      dockerfile: src/main/build/docker/Dockerfile
+    container_name: novel-front
+    ports:
+      - "8083:8083"
+    environment:
+      TZ: Asia/Shanghai
+      SERVER_PORT: "8083"
+      # Redis（前台用 spring.data.redis）
+      SPRING_DATA_REDIS_HOST: host.docker.internal
+      SPRING_DATA_REDIS_PORT: "6379"
+      SPRING_DATA_REDIS_PASSWORD: test123456
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      # 上传图片 / 封面图持久化
+      - pic-data:/var/pic
+    restart: unless-stopped
+
+  # ---------------- 平台后台 ----------------
+  novel-admin:
+    image: moyue/novel-admin:local
+    build:
+      context: ./novel-admin
+      dockerfile: src/main/build/docker/Dockerfile
+    container_name: novel-admin
+    ports:
+      - "8089:8089"
+    environment:
+      TZ: Asia/Shanghai
+      SERVER_PORT: "8089"
+      # 后台的 ShiroConfig 读的是 spring.redis.*（非 spring.data.redis）
+      SPRING_REDIS_HOST: host.docker.internal
+      SPRING_REDIS_PORT: "6379"
+      SPRING_REDIS_PASSWORD: test123456
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - pic-data:/var/pic
+    restart: unless-stopped
+
+  # ---------------- 采集管理 ----------------
+  novel-crawl:
+    image: moyue/novel-crawl:local
+    build:
+      context: ./novel-crawl
+      dockerfile: src/main/build/docker/Dockerfile
+    container_name: novel-crawl
+    ports:
+      - "8081:8081"
+    environment:
+      TZ: Asia/Shanghai
+      SERVER_PORT: "8081"
+      SPRING_DATA_REDIS_HOST: host.docker.internal
+      SPRING_DATA_REDIS_PORT: "6379"
+      SPRING_DATA_REDIS_PASSWORD: test123456
+      # 邮件授权码：不注入则不发告警邮件，不影响启动
+      MAIL_PASSWORD: ""
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+volumes:
+  pic-data:

@@ -1,0 +1,36 @@
+spring:
+  config:
+    import: classpath:application-common.yml
+  main:
+    allow-bean-definition-overriding: true
+  #Redis服务器IP
+  data:
+    redis:
+      host: 127.0.0.1
+      #Redis服务器连接端口
+      port: 6379
+      #Redis服务器连接密码
+      password: test123456
+      #连接超时时间（毫秒）
+      timeout: 10000
+
+content:
+  save:
+    storage: db # 小说内容存储方式：db-数据库，txt-TXT文本
+    path: C:/moyue/books  # 小说TXT文本保存路径
+
+# HTTP 代理配置
+# 用途：爬虫加速
+# 获取：https://sx.org/c/NOVEL3
+http:
+  proxy:
+    # 是否开启 HTTP 代理，true-开启，false-不开启
+    enabled: false
+    # 代理 IP
+    ip: 62.112.8.26
+    # 代理端口号
+    port: 9999
+    # 代理用户名
+    username: SX_U
+    # 代理密码
+    password: SX_P

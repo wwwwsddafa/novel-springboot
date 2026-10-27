@@ -1,0 +1,38 @@
+# ============================================================
+# 墨阅书城 · 从源码本地构建（开发者用）
+# ------------------------------------------------------------
+# 这是一个 override 文件，必须和 docker-compose.yml 叠加使用：
+#
+#   # 1. 先编译出 jar（Dockerfile 只做 COPY target/*.jar，不负责编译）
+#   mvn -B -DskipTests clean package
+#
+#   # 2. 叠加 build 段，本地构建并启动
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+#
+# 构建完成后镜像 tag 与 docker-compose.yml 里的 ghcr 名一致，
+# 所以之后单独 `docker compose up -d` 也能直接用，不会再去拉远端。
+#
+# 想推送到自己的 registry：先 docker login，再
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml push
+# ============================================================
+
+services:
+  mysql:
+    build:
+      context: ./doc/sql
+      dockerfile: Dockerfile.data
+
+  novel-front:
+    build:
+      context: ./novel-front
+      dockerfile: src/main/build/docker/Dockerfile
+
+  novel-admin:
+    build:
+      context: ./novel-admin
+      dockerfile: src/main/build/docker/Dockerfile
+
+  novel-crawl:
+    build:
+      context: ./novel-crawl
+      dockerfile: src/main/build/docker/Dockerfile

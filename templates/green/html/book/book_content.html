@@ -1,0 +1,817 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.w3.org/1999/xhtml">
+<head th:replace="common/header :: common_head(~{::title},~{::meta},~{::link},~{})">
+    <title th:utext="${book.bookName}+'_'+${bookIndex.indexName}+'_'+${application.website.name}"></title>
+    <meta name="keywords"
+          th:content="${book.bookName}+'官方首发,'+${book.bookName}+'小说,'+${book.bookName}+'最新章节,'+${book.bookName}+'txt下载,'+${book.bookName}+'无弹窗,'+${book.bookName}+'吧,'+${book.bookName}+'离线完本'"/>
+    <meta name="description"
+          th:content="${book.bookName}+','+${book.bookName}+'小说阅读,'+${application.website.name}+'提供'+${book.bookName}+'首发最新章节及txt下载,'+${book.bookName}+'最新更新章节,精彩尽在'+${application.website.name}+'。'"/>
+    <link rel="stylesheet" href="/css/read.css"/>
+    <link href="/css/book.css" rel="stylesheet"/>
+
+</head>
+<link href="/layui/css/layui.css" rel="stylesheet"/>
+<style type="text/css">
+    .screen_toolbar {
+        position: fixed;
+        width: 100%;
+        left: 0px;
+        bottom: 0px;
+        text-align: center;
+        z-index: 100;
+    }
+
+</style>
+<div th:replace="common/js :: js"></div>
+<script src="/javascript/bookdetail.js" type="text/javascript"></script>
+<script type="text/javascript">
+    BookDetail.SetReadFontFamilyClear(0);
+    var font = localStorage.getItem("fonts");
+    var colorNum = localStorage.getItem("colorNum");
+    var fontNum = localStorage.getItem("fontNum");
+
+
+</script>
+<body class="read_style_1" oncontextmenu="return false">
+
+<input type="hidden" id="bookId" th:value="${book.id}"/>
+<input type="hidden" id="bookName" th:value="${book.bookName}"/>
+<input type="hidden" id="preIndexName" th:value="${bookIndex.indexName}"/>
+
+<input type="hidden" id="preContentId" th:value="${bookIndex.id}"/>
+<input type="hidden" id="preIndexId" th:value="${preBookIndexId}"/>
+<input type="hidden" id="nextIndexId" th:value="${nextBookIndexId}"/>
+<input type="hidden" id="logo" th:value="${application.website.logo}"/>
+<input type="hidden" id="logoDark" th:value="${application.website.logoDark}"/>
+
+<div th:replace="common/top :: top('10')">
+</div>
+
+<div id="showDetail">
+
+    <div class="readBody cf">
+        <div class="readMain cf">
+            <div class="read_menu">
+                <div class="menu_left" style="">
+                    <ul>
+                        <li><a class="ico_catalog" th:href="'/book/indexList-'+${book.id}+'.html'" title="目录">
+                            <b>目录</b></a></li>
+                        <li><a class="ico_page" th:href="'/book/'+${book.id}+'.html'" title="返回书页"><b>书页</b></a></li>
+                        <li class="li_shelf" id="cFavs"><a class="ico_shelf" href="javascript:void(0);" title="加入书架"
+                                                           onclick="javascript:BookDetail.AddFavorites(37,1959973,1);"><b>加书架</b></a>
+                        </li>
+                        <li class="li_shelfed" style="display: none;"><a class="ico_shelfed" href="javascript:void(0);"
+                                                                         title="已收藏"><b>已收藏</b></a></li>
+                        <li><a class="ico_bookmark" href="javascript:void(0);" title="加书签"
+                               onclick="javascript:addBookmark();"><b>加书签</b></a></li>
+
+                        <li><a class="ico_comment" th:href="'/book/comment-'+${book.id}+'.html'" title="评论">
+                            <b>评论</b></a></li>
+                        <li><a class="ico_setup" href="javascript:void(0);" title="设置"><b>设置</b></a></li>
+                    </ul>
+                </div>
+                <div class="menu_right" style="position: fixed; bottom: 0">
+                    <ul>
+                        <li><a class="ico_pagePrev"
+                               th:href="'javascript:enterPreIndexPage(\''+${book.id}+'\',\''+${preBookIndexId}+'\');'"
+                               title="上一章"><i>上一章</i></a></li>
+                        <li><a class="ico_pageNext"
+                               th:href="'javascript:enterNextIndexPage(\''+${book.id}+'\',\''+${nextBookIndexId}+'\');'"
+                               title="下一章"><i>下一章</i></a></li>
+                        <li><a id="autoScrollBtn" class="ico_autoscroll" href="javascript:void(0);"
+                               onclick="toggleAutoScroll()" title="自动滚屏"><b>自动滚屏</b></a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="readWrap">
+                <div class="bookNav">
+                    <a href="/">首页 </a>&gt; <a th:href="'/book/bookclass.html?c='+${book.catId}"
+                                               th:text="${book.catName}">
+                </a>&gt; <a th:href="'/book/'+${book.id}+'.html'" th:utext="${book.bookName}">
+
+                </a>
+                </div>
+                <div id="readcontent">
+                    <div class="textbox cf">
+
+                        <div class="book_title">
+                            <h1 th:utext="${bookIndex.indexName}">
+                            </h1>
+                            <div class="textinfo">
+                                类别：<a th:href="'/book/bookclass.html?c='+${book.catId}" th:text="${book.catName}"></a>
+                                作者：<a th:href="'javascript:searchByK(\''+${book.authorName}+'\')'"
+                                      th:utext="${book.authorName}"></a><span
+                                    th:text="'字数：'+${bookIndex.wordCount}"></span><span
+                                    th:text="'更新时间：'+${#dates.format(bookIndex.updateTime, 'yy/MM/dd HH:mm:ss')}"></span>
+                            </div>
+                        </div>
+                        <div class="txtwrap" th:if="${needBuy}">
+                            <div id="showReading" class="readBox" style="font-size: 16px; font-family: microsoft yahei">
+                                <p>
+
+                                </p>
+
+                                <div class="pc_bar" style="display: none;">
+                                    <a href="javascript:void(0);" class="icon_pc"
+                                       onclick="javascript:uFans.startSupportRead();">
+                                        <span><i class="icon_yb"></i><em>捧场</em></span>
+                                    </a>
+                                </div>
+                            </div>
+                            <div id="showBooking" class="orderBox">
+                                <h3>此章为VIP章节，需要订阅后才能继续阅读</h3>
+                                <form method="post" action="./2052117.html?bid=302&amp;cid=2052117" id="Form1">
+                                    <ul class="order_list">
+                                        <li>价格：<span class="red" th:text="${bookIndex.bookPrice}+'屋币(1元=100屋币)'"></span>
+                                        </li>
+                                        <li id="panelPay" class="btns"><a class="btn_red"
+                                                                          href="javascript:buyBookIndex()">购买</a></li>
+
+                                    </ul>
+                                    <input type="hidden" name="HidCId" id="HidCId" value="2052117">
+                                    <input type="hidden" name="HidBId" id="HidBId" value="302">
+                                    <input type="hidden" name="HidCRank" id="HidCRank" value="49">
+                                </form>
+                            </div>
+                        </div>
+                        <div class="txtwrap" th:if="${!needBuy}">
+                            <div id="showReading" class="readBox" style="font-size: 16px; font-family: microsoft yahei"
+                                 th:utext="${bookContent.content}">
+
+
+                                <div class="pc_bar" style="display: none;">
+                                    <a href="javascript:void(0);" class="icon_pc"
+                                       onclick="javascript:uFans.startSupportRead();">
+                                        <span><i class="icon_yb"></i><em>捧场</em></span>
+                                    </a>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+                <div class="nextPageBox">
+                    <a class="prev"
+                       th:href="'javascript:enterPreIndexPage(\''+${book.id}+'\',\''+${preBookIndexId}+'\');'">上一章</a>
+                    <a class="dir" th:href="'/book/indexList-'+${book.id}+'.html'"
+                    >目录</a> <a class="next"
+                               th:href="'javascript:enterNextIndexPage(\''+${book.id}+'\',\''+${nextBookIndexId}+'\');'">下一章</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="readPopup qrBox" style="display: none">
+        <a class="closePopup" href="javascript:void(0);" onclick="javascript:$('.maskBox,.qrBox').hide();"></a>
+        <div class="popupTit">
+            <h3>手机阅读</h3>
+        </div>
+        <div class="qrList">
+            <ul>
+            </ul>
+        </div>
+    </div>
+    <div class="readPopup setupBox" style="display: none;">
+        <a class="closePopup" href="javascript:void(0);" onclick="javascript:$('.maskBox,.setupBox').hide();"></a>
+        <div class="popupTit">
+            <h3>设置</h3>
+        </div>
+        <div class="setupList">
+            <ul>
+                <li class="readTheme">
+                    <em class="tit">阅读主题：</em>
+                    <a id="setup_color_white" class="white current"
+                       href="javascript:void(0);" title="白色" onclick="javascript:BookDetail.SetBackUpColor(1);"></a><a
+                        id="setup_color_green" class="green" href="javascript:void(0);" title="绿色"
+                        onclick="javascript:BookDetail.SetBackUpColor(2);"></a><a id="setup_color_pink" class="pink"
+                                                                                  href="javascript:void(0);" title="粉色"
+                                                                                  onclick="javascript:BookDetail.SetBackUpColor(3);"></a><a
+                        id="setup_color_yellow" class="yellow" href="javascript:void(0);" title="黄色"
+                        onclick="javascript:BookDetail.SetBackUpColor(4);"></a><a id="setup_color_gray" class="gray"
+                                                                                  href="javascript:void(0);" title="灰色"
+                                                                                  onclick="javascript:BookDetail.SetBackUpColor(5);"></a><a
+                        id="setup_color_night" class="night" href="javascript:void(0);" title="夜间"
+                        onclick="javascript:BookDetail.SetBackUpColor(6);"></a></li>
+                <li class="setFont setBtn"><em class="tit">正文字体：</em> <a id="setup_font_yahei" class="setYahei current"
+                                                                         href="javascript:void(0);"
+                                                                         onclick="javascript:BookDetail.SetReadFontFamily(0);">雅黑</a>
+                    <a id="setup_font_simsun" class="setSimsun" href="javascript:void(0);"
+                       onclick="javascript:BookDetail.SetReadFontFamily(1);">宋体</a> <a id="setup_font_ks" class="setKs"
+                                                                                       href="javascript:void(0);"
+                                                                                       onclick="javascript:BookDetail.SetReadFontFamily(2);">楷书</a>
+                </li>
+                <li class="fontSize setBtn"><em class="tit">字体大小：</em> <a class="small" href="javascript:void(0);"
+                                                                          onclick="javascript:BookDetail.SetReadFont(-2);">A-</a><span
+                        class="current_font"
+                        id="cFonts">
+                            16</span><a class="big" href="javascript:void(0);"
+                                        onclick="javascript:BookDetail.SetReadFont(2);">A+</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+<div class="maskBox" style="display: none">
+</div>
+<!-- 自动滚屏速度控制栏 -->
+<div id="autoScrollBar">
+    <span class="speed-label">滚屏速度：</span>
+    <a class="speed-btn" href="javascript:void(0);" data-speed="0.5" onclick="setScrollSpeed(0.5)">0.5x</a>
+    <a class="speed-btn active" href="javascript:void(0);" data-speed="1" onclick="setScrollSpeed(1)">1x</a>
+    <a class="speed-btn" href="javascript:void(0);" data-speed="1.5" onclick="setScrollSpeed(1.5)">1.5x</a>
+    <a class="speed-btn" href="javascript:void(0);" data-speed="2" onclick="setScrollSpeed(2)">2x</a>
+    <a class="speed-btn" href="javascript:void(0);" data-speed="2.5" onclick="setScrollSpeed(2.5)">2.5x</a>
+    <a class="speed-btn" href="javascript:void(0);" data-speed="3" onclick="setScrollSpeed(3)">3x</a>
+</div>
+
+<!-- 底部独立浮动的自动滚屏控制（不依赖 menu_right 侧栏） -->
+<div id="autoScrollFloat" style="position: fixed; right: 14px; bottom: 80px; z-index: 999;
+    display: flex; flex-direction: column; align-items: center; gap: 6px; user-select: none;">
+    <!-- 速度+ -->
+    <a href="javascript:void(0);" onclick="adjustSpeed(0.25)"
+       style="display:block; width:36px; height:36px; border-radius:50%;
+       background: rgba(255,255,255,.9); box-shadow: 0 2px 8px rgba(0,0,0,.12);
+       text-align:center; line-height:36px; text-decoration:none; color:#999; font-size:18px; font-weight:bold;">+</a>
+    <!-- 当前速度 -->
+    <span id="autoScrollSpeedLabel"
+          style="font-size:11px; color:#999; background:rgba(0,0,0,.06); padding:2px 6px; border-radius:8px;">1x</span>
+    <!-- 启动/停止 -->
+    <a href="javascript:void(0);" onclick="toggleAutoScroll()"
+       style="display:block; width:44px; height:44px; border-radius:50%;
+       background: rgba(255,255,255,.9); box-shadow: 0 2px 12px rgba(0,0,0,.15);
+       text-align:center; line-height:44px; text-decoration:none; color:#666; font-size:16px;">▶</a>
+    <!-- 速度- -->
+    <a href="javascript:void(0);" onclick="adjustSpeed(-0.25)"
+       style="display:block; width:36px; height:36px; border-radius:50%;
+       background: rgba(255,255,255,.9); box-shadow: 0 2px 8px rgba(0,0,0,.12);
+       text-align:center; line-height:36px; text-decoration:none; color:#999; font-size:18px; font-weight:bold;">−</a>
+</div>
+<div id="showError">
+    <span id="LabErrorStatus"></span>
+</div>
+
+<div class="maskBox" style="display: none" onclick="javascript:uFans.closeBox();"></div>
+<div class="readPopup pcBox" style="display: none" id="showPC"></div>
+<div class="readPopup flowerBox" style="display: none" id="showFlower"></div>
+<div class="readPopup newsTipBox" style="display: none;" id="showNote"></div>
+
+<!--
+<div id="screenInput" class="screen_toolbar" >
+    <div style="height: 5px" class="layui-col-xs2 layui-col-sm3 layui-col-md4 layui-col-lg4"></div>
+    <div class="layui-col-xs6 layui-col-sm4 layui-col-md4 layui-col-lg4">
+        <input type="text" id="screenBulletText" required lay-verify="required" placeholder="请输入弹幕内容,右下角开关可控制弹幕是否开启" autocomplete="off"
+               class="layui-input">
+
+    </div>
+    <div class="layui-col-xs2 layui-col-sm1 layui-col-md1 layui-col-lg1">
+        <button class="layui-btn  layui-btn-danger send">发送</button>
+    </div>
+</div>
+<form id="screenSwitch" class="layui-form">
+    <div class="layui-form-item" style="position: fixed;right: 0px;bottom: 100px" title="弹幕开关">
+        &lt;!&ndash; <label  class="layui-form-label" style="opacity:0.5;font-weight: bold;color: red;">弹幕</label>&ndash;&gt;
+        <div class="layui-input-block">
+            <input class="clear" type="checkbox" name="switch" lay-skin="switch">
+        </div>
+    </div>
+</form>-->
+
+<script language="javascript" type="text/javascript">
+    var logo = $("#logo").val();
+    var logoDark = $("#logoDark").val();
+    if (font) {
+        $(".readBox").css("font-size", font + "px");
+        $("#cFonts").html(font);
+        $("#ChapterBody").attr("class", "article-content font" + font);
+        BookDetail.reShowCover();
+    }
+    if (fontNum) {
+        BookDetail.SetReadFontFamily(fontNum);
+    }
+    if (colorNum) {
+        BookDetail.SetBackUpColor(colorNum);
+        if (colorNum == 6) {
+            $(".logo img").attr("src", logoDark);
+        }
+    }
+    //查询是否在书架
+    $.ajax({
+        type: "get",
+        url: "/user/queryIsInShelf",
+        data: {'bookId': $("#bookId").val()},
+        dataType: "json",
+        success: function (data) {
+            if (data.code == 200) {
+                if (data.data) {
+                    $("#cFavs").html("<a class=\"ico_shelf\" href=\"javascript:void(0);\"><b>已收藏</b></a>");
+                }
+                //添加阅读记录
+                $.ajax({
+                    type: "POST",
+                    url: "/user/addReadHistory",
+                    data: {'bookId': $("#bookId").val(), 'preContentId': $("#preContentId").val()},
+                    dataType: "json",
+                    success: function (data) {
+
+                    },
+                    error: function () {
+                    }
+                })
+
+
+            } else if (data.code == 1001) {
+                //未登录
+
+            } else {
+                layer.alert(data.msg);
+            }
+
+        },
+        error: function () {
+            layer.alert('网络异常');
+        }
+    })
+
+
+    var bookId = $("#bookId").val();
+    var indexId = $("#preContentId").val();
+    var preIndexId = $("#preIndexId").val();
+    var nextIndexId = $("#nextIndexId").val();
+    $(function () {
+        // 显示右侧菜单（prev/next/自动滚屏）
+        $(".menu_right").show();
+        BookDetail.GetReadSet(bookId, indexId, preIndexId, nextIndexId, 1);
+        $(".ico_setup").click(function () {
+
+            $(".maskBox,.setupBox").show();
+        });
+        $(".ico_phone").click(function () {
+            $(".maskBox,.qrBox").show();
+        });
+
+        $(window).scroll(function () {
+            var vtop = $(document).scrollTop();
+            var vbottom = $(document).height() - vtop - $(window).height();
+            if (vtop > 50) {
+                $(".menu_left").css("position", "fixed");
+                $(".menu_left").css("top", "2px");
+            } else {
+                $(".menu_left").css("position", "absolute");
+                $(".menu_left").css("top", "60px")
+            }
+
+            if (vbottom < 150) {
+                $(".menu_right").css("position", "absolute");
+                $(".menu_right").css("bottom", "150px");
+            } else {
+                $(".menu_right").css("position", "fixed");
+                $(".menu_right").css("bottom", "2px");
+            }
+        });
+
+        var bgClass = '1';
+        if (bgClass == 6) {
+            $(".logo img").attr("src", logoDark);
+        }
+        $(".readTheme a").click(function () {
+            $(".logo img").attr("src", logo);
+        })
+        $("#setup_color_night").click(function () {
+            $(".logo img").attr("src", logoDark);
+        });
+
+
+    });
+
+    function enterPreIndexPage(bookId, bookIndexId) {
+        if (bookIndexId != 0) {
+            window.location.href = '/book/' + bookId + '/' + bookIndexId + ".html";
+        } else {
+            window.location.href = '/book/indexList-' + bookId + '.html';
+        }
+
+    }
+
+    function enterNextIndexPage(bookId, bookIndexId) {
+        if (bookIndexId != 0) {
+            window.location.href = '/book/' + bookId + '/' + bookIndexId + ".html";
+        } else {
+            window.location.href = '/book/indexList-' + bookId + '.html';
+        }
+
+    }
+
+    function buyBookIndex() {
+        $.ajax({
+            type: "POST",
+            url: "/user/buyBookIndex",
+            data: {
+                'bookId': $("#bookId").val(), "bookName": $("#bookName").val(),
+                "bookIndexId": $("#preContentId").val(), "bookIndexName": $("#preIndexName").val()
+            },
+            dataType: "json",
+            success: function (data) {
+                if (data.code == 200) {
+                    location.reload();
+
+
+                } else if (data.code == 1001) {
+                    //未登录
+                    location.href = '/user/login.html?originUrl=' + encodeURIComponent(location.href);
+
+                } else {
+                    layer.alert(data.msg);
+                }
+
+            },
+            error: function () {
+                layer.alert('网络异常');
+            }
+        })
+
+    }
+
+    function addBookmark() {
+        var bookId = $('#bookId').val();
+        var indexId = $('#preContentId').val();
+        var indexName = $('#preIndexName').val();
+        var bookmarkName = prompt('请输入书签名称（可选，默认使用当前章节名）：', indexName);
+
+        $.ajax({
+            type: "POST",
+            url: "/user/bookmark",
+            data: {
+                bookId: bookId,
+                indexId: indexId,
+                bookmarkName: bookmarkName || ''
+            },
+            dataType: "json",
+            success: function (data) {
+                if (data.code == 200) {
+                    layer.alert('书签添加成功！');
+                } else if (data.code == 1001) {
+                    location.href = '/user/login.html?originUrl=' + encodeURIComponent(location.href);
+                } else {
+                    layer.alert(data.msg);
+                }
+            },
+            error: function () {
+                layer.alert('网络异常');
+            }
+        });
+    }
+
+    // ============ 自动滚屏 ============
+    var autoScrollId = null;
+    var scrollSpeed = 1; // 每帧滚动的像素基数
+    var scrollSpeedMultiplier = parseFloat(localStorage.getItem('autoScrollSpeed')) || 1;
+
+    function refreshSpeedUI() {
+        var label = scrollSpeedMultiplier + 'x';
+        $('#autoScrollSpeedLabel').text(label);
+        // 高亮底部速度栏匹配的按钮（精确匹配）
+        $('#autoScrollBar .speed-btn').removeClass('active');
+        $('#autoScrollBar .speed-btn').each(function () {
+            if (parseFloat($(this).data('speed')) === scrollSpeedMultiplier) {
+                $(this).addClass('active');
+            }
+        });
+        localStorage.setItem('autoScrollSpeed', scrollSpeedMultiplier);
+    }
+
+    function adjustSpeed(delta) {
+        var next = Math.round((scrollSpeedMultiplier + delta) * 100) / 100;
+        if (next < 0.25) next = 0.25;
+        if (next > 3) next = 3;
+        scrollSpeedMultiplier = next;
+        refreshSpeedUI();
+    }
+
+    function toggleAutoScroll() {
+        if (autoScrollId) {
+            stopAutoScroll();
+        } else {
+            startAutoScroll();
+        }
+    }
+
+    function startAutoScroll() {
+        function step() {
+            window.scrollBy(0, scrollSpeed * scrollSpeedMultiplier);
+            autoScrollId = requestAnimationFrame(step);
+        }
+        autoScrollId = requestAnimationFrame(step);
+        // 侧栏按钮
+        $('#autoScrollBtn b').text('停止滚屏');
+        $('#autoScrollBtn').addClass('on');
+        // 浮动按钮 — 变为暂停图标并变绿
+        $('#autoScrollFloat a[onclick*="toggleAutoScroll"]')
+            .css({color: '#e74c3c', background: 'rgba(255,255,255,.95)'})
+            .html('&#x23F8;');
+        // 速度栏
+        $('#autoScrollBar').show();
+    }
+
+    function stopAutoScroll() {
+        if (autoScrollId) {
+            cancelAnimationFrame(autoScrollId);
+            autoScrollId = null;
+        }
+        $('#autoScrollBtn b').text('自动滚屏');
+        $('#autoScrollBtn').removeClass('on');
+        // 浮动按钮 — 恢复播放图标
+        $('#autoScrollFloat a[onclick*="toggleAutoScroll"]')
+            .css({color: '#666', background: 'rgba(255,255,255,.9)'})
+            .html('▶');
+        $('#autoScrollBar').hide();
+    }
+
+    function setScrollSpeed(multiplier) {
+        scrollSpeedMultiplier = multiplier;
+        refreshSpeedUI();
+    }
+
+    // 页面加载时恢复速度偏好 UI
+    refreshSpeedUI();
+
+    // 点击/触摸页面其他区域自动暂停滚屏
+    $(document).on('click touchstart', function (e) {
+        if (autoScrollId && !$(e.target).closest('#autoScrollBtn, #autoScrollBar, #autoScrollFloat').length) {
+            stopAutoScroll();
+        }
+    });
+
+    // 键盘空格键切换滚屏
+    $(document).on('keydown', function (e) {
+        // 排除在 input/textarea 中输入时空格
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            return;
+        }
+        if (e.key === ' ' || e.keyCode === 32) {
+            e.preventDefault();
+            toggleAutoScroll();
+        }
+    });
+
+    $.post("/book/addVisitCount", {"bookId": $("#bookId").val()}, function () {
+    });
+
+    // ============ 划线评论 ============
+    var _inlineEmojiList = ['👍','👎','😂','❤️','😮','😢','👏','🔥','💡','📖','✨','🤔'];
+
+    function initParagraphIds() {
+        var counter = 0;
+        $('#showReading').find('p').each(function() {
+            var text = $(this).text().trim();
+            if (text.length > 0 && !$(this).attr('data-pid')) {
+                $(this).attr('data-pid', 'P' + String(++counter).padStart(3, '0'));
+            }
+        });
+    }
+
+    function loadInlineCommentMarks() {
+        var indexId = $('#preContentId').val();
+        if (!indexId) return;
+        $('.inline-comment-mark').remove();
+        $.get('/book/listParagraphCommentCounts', {indexId: indexId}, function(res) {
+            if (res.code === 200) {
+                var counts = res.data;
+                for (var pid in counts) {
+                    var p = $('p[data-pid="' + pid + '"]');
+                    if (p.length) {
+                        p.append('<span class="inline-comment-mark" data-pid="' + pid + '"><sup>' + counts[pid] + '</sup></span>');
+                    }
+                }
+            }
+        });
+    }
+
+    $(document).on('click', '.inline-comment-mark', function(e) {
+        e.stopPropagation();
+        var pid = $(this).data('pid');
+        var indexId = $('#preContentId').val();
+        showInlineCommentPanel(pid, indexId, this);
+    });
+
+    function showInlineCommentPanel(pid, indexId, anchor) {
+        var rect = anchor.getBoundingClientRect();
+        var $panel = $('#inlineCommentPanel');
+        var top = rect.bottom + window.scrollY + 5;
+        var left = Math.min(rect.left + window.scrollX, $(window).width() - 340);
+        $panel.css({top: top, left: left}).data('pid', pid).data('indexId', indexId).show();
+        var quoteText = $('p[data-pid="' + pid + '"]').text().trim();
+        var shortQuote = quoteText.length > 30 ? quoteText.substring(0, 30) + '…' : quoteText;
+        $('#inlineCommentPanelTitle').html('划线评论 <span style="font-weight:normal;color:#999;font-size:12px;">' + shortQuote + '</span>');
+        $.get('/book/listInlineComments', {indexId: indexId, paragraphId: pid}, function(res) {
+            if (res.code === 200) {
+                var html = '';
+                for (var i = 0; i < res.data.length; i++) {
+                    var c = res.data[i];
+                    html += '<div class="inline-comment-item">'
+                        + '<img src="' + (c.createUserPhoto || '/images/man.png') + '" class="inline-comment-avatar"/>'
+                        + '<div class="inline-comment-body">'
+                        + '<span class="inline-comment-name">' + c.createUserName + '</span>'
+                        + '<span class="inline-comment-text">' + c.commentContent + '</span>'
+                        + '<div class="inline-comment-actions">'
+                        + '<a href="javascript:void(0)" onclick="toggleInlineCommentLike(' + c.id + ')" class="ic-act">👍 <span id="icLike' + c.id + '">' + (c.likesCount || 0) + '</span></a>'
+                        + '<a href="javascript:void(0)" onclick="toggleInlineCommentUnLike(' + c.id + ')" class="ic-act">👎 <span id="icUnLike' + c.id + '">' + (c.unLikesCount || 0) + '</span></a>'
+                        + '<a href="/book/reply-' + c.id + '.html" class="ic-act">回复(' + (c.replyCount || 0) + ')</a>'
+                        + '</div>'
+                        + '<span class="inline-comment-time">' + c.createTime + '</span>'
+                        + '</div></div>';
+                }
+                $('#inlineCommentList').html(html || '<div style="padding:10px;color:#999;">暂无评论</div>');
+            }
+        });
+    }
+
+    function toggleInlineCommentLike(commentId) {
+        $.post('/book/toggleCommentLike', {commentId: commentId}, function(res) {
+            if (res.code === 200) {
+                $('#icLike' + commentId).text(res.data);
+            } else if (res.code === 1001) {
+                location.href = '/user/login.html?originUrl=' + encodeURIComponent(location.href);
+            }
+        });
+    }
+
+    function toggleInlineCommentUnLike(commentId) {
+        $.post('/book/toggleCommentUnLike', {commentId: commentId}, function(res) {
+            if (res.code === 200) {
+                $('#icUnLike' + commentId).text(res.data);
+            } else if (res.code === 1001) {
+                location.href = '/user/login.html?originUrl=' + encodeURIComponent(location.href);
+            }
+        });
+    }
+
+    $('#showReading').on('mouseup', function(e) {
+        var sel = window.getSelection();
+        var text = sel.toString().trim();
+        if (!text || text.length < 5) return;
+        var range = sel.getRangeAt(0);
+        var startP = $(range.startContainer).closest('p[data-pid]');
+        if (!startP.length) return;
+        var pid = startP.attr('data-pid');
+        var $bubble = $('#writeBubble');
+        $bubble.data('pid', pid).data('quote', text);
+        var top = e.clientY + window.scrollY - 45;
+        var left = e.clientX + window.scrollX - 30;
+        $bubble.css({top: top, left: left}).show();
+        $('#inlineCommentForm').hide();
+    });
+
+    $(document).on('mousedown', function(e) {
+        if (!$(e.target).closest('#writeBubble, #inlineCommentPanel').length) {
+            $('#writeBubble').hide();
+        }
+    });
+
+    function insertInlineEmoji(emoji) {
+        var $input = $('#inlineCommentInput');
+        $input.val($input.val() + emoji).focus();
+    }
+
+    function submitInlineComment() {
+        var pid = $('#writeBubble').data('pid');
+        var content = $('#inlineCommentInput').val().trim();
+        if (!content || content.length < 2) {
+            layer.alert('评论内容至少2个字');
+            return;
+        }
+        $.post('/book/addBookComment', {
+            bookId: $('#bookId').val(),
+            indexId: $('#preContentId').val(),
+            paragraphId: pid,
+            commentType: 2,
+            commentContent: content
+        }, function(res) {
+            if (res.code === 200) {
+                layer.msg('发表成功');
+                $('#writeBubble').hide();
+                $('#inlineCommentInput').val('');
+                window.getSelection().removeAllRanges();
+                loadInlineCommentMarks();
+                var $panel = $('#inlineCommentPanel');
+                if ($panel.is(':visible') && $panel.data('pid') === pid) {
+                    showInlineCommentPanel(pid, $panel.data('indexId'), $('.inline-comment-mark[data-pid="' + pid + '"]')[0]);
+                }
+            } else if (res.code === 1001) {
+                location.href = '/user/login.html?originUrl=' + encodeURIComponent(location.href);
+            } else {
+                layer.alert(res.msg);
+            }
+        });
+    }
+
+    initParagraphIds();
+    loadInlineCommentMarks();
+</script>
+
+<!-- 划线评论 UI -->
+<div id="writeBubble" style="display:none; position:absolute; z-index:1000;">
+    <div class="write-bubble-btn" onclick="$('#inlineCommentForm').toggle()">写想法</div>
+    <div id="inlineCommentForm" style="display:none; margin-top:6px; background:#fff; border:1px solid #e0e0e0; border-radius:6px; padding:8px; box-shadow:0 2px 12px rgba(0,0,0,.1);">
+        <div id="inlineEmojiBar" style="margin-bottom:4px;"></div>
+        <textarea id="inlineCommentInput" placeholder="写下你的想法..." style="width:220px;height:50px;border:1px solid #ddd;border-radius:4px;padding:4px;font-size:13px;resize:none;"></textarea>
+        <div style="text-align:right; margin-top:4px;">
+            <button onclick="submitInlineComment()" style="padding:4px 14px;background:#4a90d9;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:13px;">发表</button>
+        </div>
+    </div>
+</div>
+
+<div id="inlineCommentPanel" style="display:none; position:absolute; z-index:999; background:#fff; border:1px solid #e0e0e0; border-radius:8px; width:320px; max-height:420px; overflow-y:auto; box-shadow:0 4px 16px rgba(0,0,0,.12);">
+    <div style="padding:8px 12px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+        <span id="inlineCommentPanelTitle" style="font-weight:bold; font-size:14px;">划线评论</span>
+        <span onclick="$('#inlineCommentPanel').hide()" style="cursor:pointer; font-size:18px; color:#999;">×</span>
+    </div>
+    <div id="inlineCommentList" style="padding:8px 12px;"></div>
+</div>
+
+<script>
+    (function() {
+        var bar = document.getElementById('inlineEmojiBar');
+        if (!bar) return;
+        var html = '';
+        for (var i = 0; i < _inlineEmojiList.length; i++) {
+            html += '<span onclick="insertInlineEmoji(\'' + _inlineEmojiList[i] + '\')" style="cursor:pointer;font-size:18px;margin-right:4px;display:inline-block;padding:2px;">' + _inlineEmojiList[i] + '</span>';
+        }
+        bar.innerHTML = html;
+    })();
+</script>
+
+<style>
+    .inline-comment-mark {
+        display: inline-block;
+        margin-left: 4px;
+        cursor: pointer;
+        vertical-align: super;
+    }
+    .inline-comment-mark sup {
+        background: #4a90d9;
+        color: #fff;
+        border-radius: 8px;
+        padding: 1px 5px;
+        font-size: 10px;
+        font-weight: bold;
+    }
+    .write-bubble-btn {
+        background: #4a90d9;
+        color: #fff;
+        border-radius: 4px;
+        padding: 6px 12px;
+        cursor: pointer;
+        font-size: 13px;
+        box-shadow: 0 2px 8px rgba(0,0,0,.15);
+        display: inline-block;
+    }
+    .inline-comment-item {
+        display: flex;
+        padding: 8px 0;
+        border-bottom: 1px solid #f5f5f5;
+    }
+    .inline-comment-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        margin-right: 8px;
+        flex-shrink: 0;
+    }
+    .inline-comment-body {
+        flex: 1;
+        min-width: 0;
+    }
+    .inline-comment-name {
+        display: block;
+        font-size: 12px;
+        color: #999;
+    }
+    .inline-comment-text {
+        display: block;
+        font-size: 13px;
+        color: #333;
+        margin: 2px 0;
+        word-break: break-all;
+    }
+    .inline-comment-actions {
+        margin: 4px 0 2px;
+    }
+    .ic-act {
+        display: inline-block;
+        font-size: 12px;
+        color: #888;
+        margin-right: 10px;
+        text-decoration: none;
+        cursor: pointer;
+    }
+    .ic-act:hover {
+        color: #4a90d9;
+    }
+    .inline-comment-time {
+        display: block;
+        font-size: 11px;
+        color: #bbb;
+    }
+</style>
+</body>
+</html>

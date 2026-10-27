@@ -1,0 +1,49 @@
+# ============================================================
+# 墨阅书城 · 带初始化数据的 MySQL 镜像
+# ------------------------------------------------------------
+# 构建上下文：doc/sql/（compose 中 context: ./doc/sql）
+# 作用：把 novel_plus_data.sql.zip 解压后放进 /docker-entrypoint-initdb.d/
+#      MySQL 官方镜像首次启动时会自动执行该目录下的 SQL，
+#      因此使用者无需手工导入，容器一起来就有小说和正文。
+# 注意：数据目录非空时 initdb 不会执行，需要 down -v 清卷重来。
+# ============================================================
+
+# ---------------- 阶段一：解压 ----------------
+# 官方 mysql 镜像里没有 unzip，单独用一个 alpine 阶段处理
+FROM alpine:3.20 AS unpack
+
+RUN apk add --no-cache unzip
+
+WORKDIR /w
+COPY novel_plus_data.sql.zip .
+
+# -p 表示输出到 stdout，避免把压缩包内多余的文件（如 __MACOSX）也解出来
+RUN unzip -p novel_plus_data.sql.zip novel_plus_data.sql > 00-data.sql \
+    && ls -lh 00-data.sql
+
+# ---------------- 阶段二：MySQL ----------------
+FROM mysql:8.0
+
+# 00- 前缀不是装饰：entrypoint 按文件名字母序执行，
+# 加了前缀才能保证"数据包"排在所有增量脚本之前
+COPY --from=unpack /w/00-data.sql /docker-entrypoint-initdb.d/00-data.sql
+
+# 增量脚本：数据包是 2026-06-01 的快照，结构落后于代码，
+# 必须按日期顺序补齐（日期前缀天然等于字母序）
+COPY 20261013.sql 20261016.sql 20261023.sql \
+     20261024_comment_report.sql 20261024_comment_sort.sql \
+     20261026_inline_comment.sql \
+     /tmp/inc/
+
+# ⚠ 必须合并成一个文件并在开头补 USE：
+#   增量脚本里是裸 INSERT / ALTER，不带库名，而 MySQL 初始化时没有默认库，
+#   逐个执行会报 ERROR 1046 (No database selected)，随后容器重启、
+#   数据目录已非空导致 initdb 被跳过，最后得到一个"健康"的半成品库。
+#   cat 的通配符按字母序展开，正好等于日期顺序。
+RUN { echo "USE \`novel_plus\`;"; cat /tmp/inc/2026*.sql; } \
+      > /docker-entrypoint-initdb.d/01-increments.sql \
+    && rm -rf /tmp/inc
+
+# 品牌信息覆盖：数据包是原作者转储，里面存的是原始站名/域名/Logo 地址/作者 QQ。
+# 放在最后执行（02- 前缀），保证最终状态是本站信息。
+COPY brand.sql /docker-entrypoint-initdb.d/02-brand.sql

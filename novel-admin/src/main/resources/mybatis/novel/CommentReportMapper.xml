@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.moyue.novel.dao.CommentReportDao">
+
+    <select id="get" resultType="com.moyue.novel.domain.CommentReportDO">
+        select r.`id`, r.`target_type`, r.`target_id`, r.`reporter_id`, r.`report_reason`,
+               r.`report_type`, r.`status`, r.`handler_note`, r.`create_time`, r.`update_time`,
+               case when r.target_type = 1 then bc.comment_content else bcr.reply_content end as targetContent,
+               u1.username as reporterName,
+               case when r.target_type = 1 then u2.username else u3.username end as commenterName
+        from comment_report r
+        left join book_comment bc on r.target_type = 1 and r.target_id = bc.id
+        left join book_comment_reply bcr on r.target_type = 2 and r.target_id = bcr.id
+        left join user u1 on r.reporter_id = u1.id
+        left join user u2 on bc.create_user_id = u2.id
+        left join user u3 on bcr.create_user_id = u3.id
+        where r.id = #{value}
+    </select>
+
+    <select id="list" resultType="com.moyue.novel.domain.CommentReportDO">
+        select r.`id`, r.`target_type`, r.`target_id`, r.`reporter_id`, r.`report_reason`,
+               r.`report_type`, r.`status`, r.`handler_note`, r.`create_time`, r.`update_time`,
+               case when r.target_type = 1 then bc.comment_content else bcr.reply_content end as targetContent,
+               u1.username as reporterName,
+               case when r.target_type = 1 then u2.username else u3.username end as commenterName
+        from comment_report r
+        left join book_comment bc on r.target_type = 1 and r.target_id = bc.id
+        left join book_comment_reply bcr on r.target_type = 2 and r.target_id = bcr.id
+        left join user u1 on r.reporter_id = u1.id
+        left join user u2 on bc.create_user_id = u2.id
+        left join user u3 on bcr.create_user_id = u3.id
+        <where>
+            <if test="id != null and id != ''"> and r.id = #{id} </if>
+            <if test="targetType != null and targetType != ''"> and r.target_type = #{targetType} </if>
+            <if test="reportType != null and reportType != ''"> and r.report_type = #{reportType} </if>
+            <if test="status != null and status != ''"> and r.status = #{status} </if>
+            <if test="reporterId != null and reporterId != ''"> and r.reporter_id = #{reporterId} </if>
+        </where>
+        <choose>
+            <when test="sort != null and sort.trim() != ''">
+                order by ${sort} ${order}
+            </when>
+            <otherwise>
+                order by r.create_time desc
+            </otherwise>
+        </choose>
+        <if test="offset != null and limit != null">
+            limit #{offset}, #{limit}
+        </if>
+    </select>
+
+    <select id="count" resultType="int">
+        select count(*) from comment_report r
+        <where>
+            <if test="id != null and id != ''"> and r.id = #{id} </if>
+            <if test="targetType != null and targetType != ''"> and r.target_type = #{targetType} </if>
+            <if test="reportType != null and reportType != ''"> and r.report_type = #{reportType} </if>
+            <if test="status != null and status != ''"> and r.status = #{status} </if>
+            <if test="reporterId != null and reporterId != ''"> and r.reporter_id = #{reporterId} </if>
+        </where>
+    </select>
+
+    <update id="update" parameterType="com.moyue.novel.domain.CommentReportDO">
+        update comment_report
+        <set>
+            <if test="status != null">`status` = #{status}, </if>
+            <if test="handlerNote != null">`handler_note` = #{handlerNote}, </if>
+            <if test="updateTime != null">`update_time` = #{updateTime}</if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <delete id="remove">
+        delete from comment_report where id = #{value}
+    </delete>
+
+    <delete id="batchRemove">
+        delete from comment_report where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>

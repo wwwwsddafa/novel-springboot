@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.moyue.novel.mapper.FrontUserBookmarkMapper">
+
+    <select id="listBookmarkByBook" resultType="com.moyue.novel.vo.BookmarkVO">
+        select t1.id, t1.book_id, t1.index_id, t1.bookmark_name, t1.position, t1.create_time,
+               t2.index_name
+        from user_bookmark t1
+                 inner join book_index t2 on t1.index_id = t2.id
+        where t1.user_id = #{userId} and t1.book_id = #{bookId}
+        order by t1.create_time desc
+    </select>
+
+    <select id="listAllBookmark" resultType="com.moyue.novel.vo.BookmarkVO">
+        select t1.id, t1.book_id, t1.index_id, t1.bookmark_name, t1.position, t1.create_time,
+               t2.index_name, t3.book_name, t3.pic_url, t3.author_name
+        from user_bookmark t1
+                 inner join book_index t2 on t1.index_id = t2.id
+                 inner join book t3 on t1.book_id = t3.id
+        where t1.user_id = #{userId}
+        order by t1.create_time desc
+    </select>
+
+</mapper>

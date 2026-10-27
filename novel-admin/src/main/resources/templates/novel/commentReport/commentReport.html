@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<head th:include="include :: header"></head>
+<body class="gray-bg">
+<div class="wrapper wrapper-content ">
+    <div class="col-sm-12">
+        <div class="ibox">
+            <div class="ibox-body">
+                <div class="fixed-table-toolbar">
+                    <div class="columns pull-left">
+                        <button shiro:hasPermission="novel:commentReport:batchRemove" type="button"
+                                class="btn  btn-danger" onclick="batchRemove()">
+                            <i class="fa fa-trash" aria-hidden="true"></i>删除
+                        </button>
+                    </div>
+                    <div class="columns pull-right">
+                        <button class="btn btn-success" onclick="reLoad()">查询</button>
+                    </div>
+                    <form id="searchForm">
+                        <div class="columns pull-right col-md-2">
+                            <select id="status" name="status" class="form-control">
+                                <option value="">全部状态</option>
+                                <option value="0">待处理</option>
+                                <option value="1">已忽略</option>
+                                <option value="2">已删除</option>
+                            </select>
+                        </div>
+                        <div class="columns pull-right col-md-2">
+                            <select id="reportType" name="reportType" class="form-control">
+                                <option value="">全部类型</option>
+                                <option value="spam">垃圾广告</option>
+                                <option value="abuse">侮辱谩骂</option>
+                                <option value="porn">色情低俗</option>
+                                <option value="other">其他</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <table id="exampleTable" data-mobile-responsive="true">
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:include="include :: footer"></div>
+<script type="text/javascript" src="/js/appjs/novel/commentReport/commentReport.js"></script>
+</body>
+</html>

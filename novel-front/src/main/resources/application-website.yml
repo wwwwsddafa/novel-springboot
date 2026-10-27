@@ -1,0 +1,12 @@
+#网站配置
+website:
+  #网站名
+  name: 墨阅书城
+  #域名
+  domain: www.moyue.com
+  #SEO关键词
+  keyword: ${website.name},小说,在线阅读,网络文学,书城,精品小说
+  #SEO描述
+  description: ${website.name}是一个支持 PC 与移动端阅读的原创文学平台，提供作品推荐、分类检索、排行榜、在线阅读、评论互动、作家专区与会员订阅等功能。
+  #联系QQ
+  qq:

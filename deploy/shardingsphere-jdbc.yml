@@ -1,0 +1,60 @@
+# ============================================================
+# 墨阅书城 · 发布环境 ShardingSphere 配置
+# ------------------------------------------------------------
+# 通过 docker-compose.yml 的 volume 挂载到容器的
+# /app/config/shardingsphere-jdbc.yml，覆盖镜像内的开发版配置。
+#
+# 与 src/main/build/docker/config/ 下开发版的唯一区别：
+#   jdbcUrl  host.docker.internal:3307  ->  mysql:3306
+# 即从"连宿主机上的 MySQL"改为"连 compose 网络内的 mysql 服务"。
+#
+# ⚠ password 必须与 .env 中的 MYSQL_ROOT_PASSWORD 保持一致。
+#   ShardingSphere 直接读取该 YAML，不经过 Spring 的占位符解析，
+#   因此这里无法写成 ${MYSQL_ROOT_PASSWORD}，只能写实际值。
+# ============================================================
+mode:
+  # 单机模式
+  type: Standalone
+  # 元数据持久化
+  repository:
+    # 数据库持久化
+    type: JDBC
+
+# 数据源配置
+dataSources:
+  ds_1:
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbcUrl: jdbc:mysql://mysql:3306/novel_plus?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+    username: root
+    password: novelplus2026
+# 规则配置
+rules:
+  - !SINGLE
+    tables:
+      - "*.*"
+  - !SHARDING
+    tables: # 数据分片规则配置
+      book_content:
+        # 分库策略，缺省表示使用默认分库策略
+        actualDataNodes: ds_${1}.book_content${0..9}
+        # 分表策略
+        tableStrategy:
+          standard:
+            # 分片列名称
+            shardingColumn: index_id
+            # 分片算法名称
+            shardingAlgorithmName: bookContentSharding
+
+    shardingAlgorithms:
+      bookContentSharding:
+        # 行表达式分片算法，使用 Groovy 的表达式，提供对 SQL 语句中的 = 和 IN 的分片操作支持
+        type: INLINE
+        props:
+          # 分片算法的行表达式
+          algorithm-expression: book_content${index_id % 10}
+
+
+props:
+  # 是否在日志中打印 SQL（容器内日志量大，默认关闭）
+  sql-show: false

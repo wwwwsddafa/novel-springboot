@@ -1,0 +1,15 @@
+**/logs
+**/.idea
+**/.vscode
+**/cachedata
+**/target
+**/*.iml
+**/.DS_Store
+
+# 本地环境变量（含密码），只提交 .env.example
+.env
+.env.local
+
+# 解压后的 185MB 数据文件，不入库
+doc/sql/novel_plus_data.sql
+

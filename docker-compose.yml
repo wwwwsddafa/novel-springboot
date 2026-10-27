@@ -1,0 +1,154 @@
+# ============================================================
+# 墨阅书城 · 一键部署
+# ------------------------------------------------------------
+# 本文件只负责「拉镜像 + 启动」，不含任何 build 段。
+# 因此不需要 JDK、不需要 Maven、不需要源码编译，一条命令即可跑起来：
+#
+#   docker compose up -d
+#
+# 首次启动 MySQL 需导入 185MB 初始数据（含小说正文），约 2~5 分钟，
+# 期间 mysql 显示 health: starting 属正常，应用容器会等健康检查通过后再启动。
+#
+# 常用命令：
+#   启动：docker compose up -d
+#   停止：docker compose down
+#   清库重来：docker compose down -v      （重新导入初始数据，本地改动会丢失）
+#   升级：docker compose pull && docker compose up -d
+#   查状态：docker compose ps
+#   自检：bash deploy/verify.sh
+#
+# 想从源码本地构建（开发者）：见 docker-compose.build.yml
+# 想复用宿主机已有 MySQL / Redis：见 docker-compose.dev.yml
+# ============================================================
+
+name: moyue
+
+services:
+  # ---------------- 数据库（镜像内已烤入 243 本书 / 11360 章正文） ----------------
+  mysql:
+    image: ${IMAGE_PREFIX:-ghcr.io/wwwwsddafa/novel-springboot}/mysql-novel:${TAG:-latest}
+    container_name: moyue-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-novelplus2026}
+      # 显式指定默认库：让 initdb 执行 SQL 时带上 --database 参数
+      MYSQL_DATABASE: novel_plus
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --max_connections=500
+      - --default-time-zone=+08:00
+    volumes:
+      # 数据持久化：容器重建不丢库；要重新导入初始数据必须 down -v
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      # 数据导入期间 ping 不通属正常，start_period 给足 5 分钟
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 300s
+    restart: unless-stopped
+    networks: [moyue-net]
+
+  # ---------------- 缓存 ----------------
+  redis:
+    image: redis:7-alpine
+    container_name: moyue-redis
+    environment:
+      # 供下面的 healthcheck 在容器内展开
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-moyue2026}
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-moyue2026}"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping | grep -q PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    networks: [moyue-net]
+
+  # ---------------- 前台门户 ----------------
+  novel-front:
+    image: ${IMAGE_PREFIX:-ghcr.io/wwwwsddafa/novel-springboot}/novel-front:${TAG:-latest}
+    container_name: moyue-front
+    ports:
+      - "8083:8083"
+    environment:
+      TZ: Asia/Shanghai
+      SERVER_PORT: "8083"
+      # 前台读 spring.data.redis.*
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:-moyue2026}
+    volumes:
+      # 关键：用发布版配置覆盖镜像内的开发版，把 MySQL 地址指向 compose 服务名
+      - ./deploy/shardingsphere-jdbc.yml:/app/config/shardingsphere-jdbc.yml:ro
+      # 上传的封面 / 图片持久化
+      - pic-data:/var/pic
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    networks: [moyue-net]
+
+  # ---------------- 平台后台 ----------------
+  novel-admin:
+    image: ${IMAGE_PREFIX:-ghcr.io/wwwwsddafa/novel-springboot}/novel-admin:${TAG:-latest}
+    container_name: moyue-admin
+    ports:
+      - "8089:8089"
+    environment:
+      TZ: Asia/Shanghai
+      SERVER_PORT: "8089"
+      # 后台的 ShiroConfig 读的是老键名 spring.redis.*
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: "6379"
+      SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-moyue2026}
+    volumes:
+      - ./deploy/shardingsphere-jdbc.yml:/app/config/shardingsphere-jdbc.yml:ro
+      - pic-data:/var/pic
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    networks: [moyue-net]
+
+  # ---------------- 采集管理 ----------------
+  novel-crawl:
+    image: ${IMAGE_PREFIX:-ghcr.io/wwwwsddafa/novel-springboot}/novel-crawl:${TAG:-latest}
+    container_name: moyue-crawl
+    ports:
+      - "8081:8081"
+    environment:
+      TZ: Asia/Shanghai
+      SERVER_PORT: "8081"
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:-moyue2026}
+      # 邮件授权码：不注入则不发告警邮件，不影响启动
+      MAIL_PASSWORD: ""
+    volumes:
+      - ./deploy/shardingsphere-jdbc.yml:/app/config/shardingsphere-jdbc.yml:ro
+      - pic-data:/var/pic
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    networks: [moyue-net]
+
+volumes:
+  mysql-data:
+  redis-data:
+  pic-data:
+
+networks:
+  moyue-net:
+    driver: bridge

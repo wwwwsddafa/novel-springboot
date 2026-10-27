@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.moyue.novel.dao.BookCommentDao">
+
+	<select id="get" resultType="com.moyue.novel.domain.BookCommentDO">
+		select `id`,`book_id`,`index_id`,`comment_content`,`reply_count`,`like_count`,`audit_status`,`create_time`,`create_user_id`,`paragraph_id`,`comment_type` from book_comment where id = #{value}
+	</select>
+
+	<select id="list" resultType="com.moyue.novel.domain.BookCommentDO">
+		select `id`,`book_id`,`index_id`,`comment_content`,`reply_count`,`like_count`,`audit_status`,`create_time`,`create_user_id`,`paragraph_id`,`comment_type`,
+		(SELECT COUNT(*) FROM comment_report WHERE comment_report.target_id = book_comment.id AND comment_report.target_type = 1) as report_count
+		from book_comment
+        <where>
+		  		  <if test="id != null and id != ''"> and id = #{id} </if>
+		  		  <if test="bookId != null and bookId != ''"> and book_id = #{bookId} </if>
+		  		  <if test="commentContent != null and commentContent != ''"> and comment_content = #{commentContent} </if>
+		  		  <if test="replyCount != null and replyCount != ''"> and reply_count = #{replyCount} </if>
+		  		  <if test="auditStatus != null and auditStatus != ''"> and audit_status = #{auditStatus} </if>
+		  		  <if test="createTime != null and createTime != ''"> and create_time = #{createTime} </if>
+		  		  <if test="createUserId != null and createUserId != ''"> and create_user_id = #{createUserId} </if>
+		  		  <if test="indexId != null and indexId != ''"> and index_id = #{indexId} </if>
+		  		  <if test="paragraphId != null and paragraphId != ''"> and paragraph_id = #{paragraphId} </if>
+		  		  <if test="commentType != null and commentType != ''"> and comment_type = #{commentType} </if>
+		  		  <if test="reportedOnly != null and reportedOnly == &quot;1&quot;"> and EXISTS (SELECT 1 FROM comment_report WHERE comment_report.target_id = book_comment.id AND comment_report.target_type = 1) </if>
+		  		</where>
+        <choose>
+            <when test="sort != null and sort.trim() != ''">
+                order by ${sort} ${order}
+            </when>
+			<otherwise>
+                order by id desc
+			</otherwise>
+        </choose>
+		<if test="offset != null and limit != null">
+			limit #{offset}, #{limit}
+		</if>
+	</select>
+	
+ 	<select id="count" resultType="int">
+		select count(*) from book_comment
+		 <where>
+		  		  <if test="id != null and id != ''"> and id = #{id} </if>
+		  		  <if test="bookId != null and bookId != ''"> and book_id = #{bookId} </if>
+		  		  <if test="commentContent != null and commentContent != ''"> and comment_content = #{commentContent} </if>
+		  		  <if test="replyCount != null and replyCount != ''"> and reply_count = #{replyCount} </if>
+		  		  <if test="auditStatus != null and auditStatus != ''"> and audit_status = #{auditStatus} </if>
+		  		  <if test="createTime != null and createTime != ''"> and create_time = #{createTime} </if>
+		  		  <if test="createUserId != null and createUserId != ''"> and create_user_id = #{createUserId} </if>
+		  		  <if test="indexId != null and indexId != ''"> and index_id = #{indexId} </if>
+		  		  <if test="paragraphId != null and paragraphId != ''"> and paragraph_id = #{paragraphId} </if>
+		  		  <if test="commentType != null and commentType != ''"> and comment_type = #{commentType} </if>
+		  		  <if test="reportedOnly != null and reportedOnly == &quot;1&quot;"> and EXISTS (SELECT 1 FROM comment_report WHERE comment_report.target_id = book_comment.id AND comment_report.target_type = 1) </if>
+		  		</where>
+	</select>
+	 
+	<insert id="save" parameterType="com.moyue.novel.domain.BookCommentDO">
+		insert into book_comment
+		(
+			`id`,
+			`book_id`,
+			`index_id`,
+			`comment_content`,
+			`reply_count`,
+			`like_count`,
+			`audit_status`,
+			`create_time`,
+			`create_user_id`,
+			`paragraph_id`,
+			`comment_type`
+		)
+		values
+		(
+			#{id},
+			#{bookId},
+			#{indexId},
+			#{commentContent},
+			#{replyCount},
+			#{likeCount},
+			#{auditStatus},
+			#{createTime},
+			#{createUserId},
+			#{paragraphId},
+			#{commentType}
+		)
+	</insert>
+
+	<insert id="saveSelective" parameterType="com.moyue.novel.domain.BookCommentDO">
+		insert into book_comment
+		(
+					<if test="id != null"> `id`,  </if>
+					<if test="bookId != null"> `book_id`,  </if>
+					<if test="indexId != null"> `index_id`,  </if>
+					<if test="commentContent != null"> `comment_content`,  </if>
+					<if test="replyCount != null"> `reply_count`,  </if>
+					<if test="likeCount != null"> `like_count`,  </if>
+					<if test="auditStatus != null"> `audit_status`,  </if>
+					<if test="createTime != null"> `create_time`,  </if>
+					<if test="createUserId != null"> `create_user_id`,  </if>
+					<if test="paragraphId != null"> `paragraph_id`,  </if>
+					<if test="commentType != null"> `comment_type` </if>
+				)
+		values
+		(
+					<if test="id != null"> #{id},  </if>
+					<if test="bookId != null"> #{bookId},  </if>
+					<if test="indexId != null"> #{indexId},  </if>
+					<if test="commentContent != null"> #{commentContent},  </if>
+					<if test="replyCount != null"> #{replyCount},  </if>
+					<if test="likeCount != null"> #{likeCount},  </if>
+					<if test="auditStatus != null"> #{auditStatus},  </if>
+					<if test="createTime != null"> #{createTime},  </if>
+					<if test="createUserId != null"> #{createUserId},  </if>
+					<if test="paragraphId != null"> #{paragraphId},  </if>
+					<if test="commentType != null"> #{commentType} </if>
+				)
+	</insert>
+	 
+	<update id="update" parameterType="com.moyue.novel.domain.BookCommentDO">
+		update book_comment
+		<set>
+			<if test="bookId != null">`book_id` = #{bookId}, </if>
+			<if test="indexId != null">`index_id` = #{indexId}, </if>
+			<if test="commentContent != null">`comment_content` = #{commentContent}, </if>
+			<if test="replyCount != null">`reply_count` = #{replyCount}, </if>
+			<if test="likeCount != null">`like_count` = #{likeCount}, </if>
+			<if test="auditStatus != null">`audit_status` = #{auditStatus}, </if>
+			<if test="createTime != null">`create_time` = #{createTime}, </if>
+			<if test="createUserId != null">`create_user_id` = #{createUserId}, </if>
+			<if test="paragraphId != null">`paragraph_id` = #{paragraphId}, </if>
+			<if test="commentType != null">`comment_type` = #{commentType}</if>
+		</set>
+		where id = #{id}
+	</update>
+	
+	<delete id="remove">
+		delete from book_comment where id = #{value}
+	</delete>
+	
+	<delete id="batchRemove">
+		delete from book_comment where id in 
+		<foreach item="id" collection="array" open="(" separator="," close=")">
+			#{id}
+		</foreach>
+	</delete>
+
+</mapper>

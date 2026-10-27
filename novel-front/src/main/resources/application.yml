@@ -1,0 +1,65 @@
+server:
+  port: 8083
+
+spring:
+  profiles:
+    active: dev
+    include: website,alipay,oss
+
+jwt:
+  secret: 53e51dbbbdb32b5bcb3852453513102c2c50e56ca73ad21bbf125b7801680e8b
+  expiration: 604800
+
+#缓存管理密码
+cache:
+  manager:
+    password: novel@2020117
+
+
+# 防止XSS攻击
+xss:
+  # 过滤开关
+  enabled: true
+  # 排除链接（多个用逗号分隔）
+  excludes: /system/notice/*
+  # 严格模式匹配链接（评论接口除外，评论走白名单模式）
+  urlPatterns: /user/addFeedBack,/author/addBook,/author/addBookContent,/author/updateBookContent,/author/register.html
+  # 评论富文本白名单模式
+  comment:
+    urlPatterns: /book/addBookComment,/book/addCommentReply
+
+
+author:
+  income:
+    #税率(扣税后所得比率)
+    tax-rate: 0.9
+    #分佣比例
+    share-proportion: 0.7
+    #兑换比率(人民币)
+    exchange-proportion: 0.01
+
+#小说章节定价规则
+book:
+  price:
+    #字数
+    word-count: 1000
+    #价值(屋币)
+    value: 5
+
+
+--- #--------------------- Spring AI 配置----------------------
+spring:
+  ai:
+    openai:
+      image:
+        enabled: true
+        base-url: https://api.siliconflow.cn
+        api-key: sk-set-your-own-api-key
+        options:
+          model: Kwai-Kolors/Kolors
+          response_format: URL
+      api-key: sk-set-your-own-api-key
+      base-url: https://api.siliconflow.cn
+      chat:
+        options:
+          model: deepseek-ai/DeepSeek-R1-0528-Qwen3-8B
