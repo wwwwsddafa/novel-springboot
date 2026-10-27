@@ -1,0 +1,96 @@
+# ============================================================
+# 自动构建并推送镜像到 GitHub Container Registry (ghcr.io)
+# ------------------------------------------------------------
+# 触发：推送到主分支、打 v* 标签、手动执行
+# 产物：4 个镜像
+#   ghcr.io/<owner>/<repo>/novel-front
+#   ghcr.io/<owner>/<repo>/novel-admin
+#   ghcr.io/<owner>/<repo>/novel-crawl
+#   ghcr.io/<owner>/<repo>/mysql-novel   （自带初始小说数据）
+#
+# ⚠ 首次推送后，GitHub Packages 默认把包设为 private，
+#   需要到仓库右侧 Packages 里把可见性改成 Public，否则别人 docker pull 会 401。
+# ============================================================
+name: publish-images
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: novel-front
+            context: ./novel-front
+            file: ./novel-front/src/main/build/docker/Dockerfile
+            module: novel-front
+          - name: novel-admin
+            context: ./novel-admin
+            file: ./novel-admin/src/main/build/docker/Dockerfile
+            module: novel-admin
+          - name: novel-crawl
+            context: ./novel-crawl
+            file: ./novel-crawl/src/main/build/docker/Dockerfile
+            module: novel-crawl
+          # 数据镜像不需要 maven，module 留空即可跳过打包
+          - name: mysql-novel
+            context: ./doc/sql
+            file: ./doc/sql/Dockerfile.data
+            module: ''
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        if: matrix.module != ''
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+          cache: maven
+
+      # -pl 只构建目标模块，-am 连带构建它依赖的 novel-common
+      - name: Package jar
+        if: matrix.module != ''
+        run: mvn -B -DskipTests -pl ${{ matrix.module }} -am package
+
+      # GHCR 要求镜像名全小写，仓库名有大小写时必须转换
+      - name: Lowercase image prefix
+        run: echo "PREFIX=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.PREFIX }}/${{ matrix.name }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=tag
+            type=sha,format=short
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
